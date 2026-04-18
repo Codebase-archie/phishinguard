@@ -4,7 +4,7 @@ class URLParser:
     BRAND_KEYWORDS = ['paypal', 'amazon', 'google', 'facebook', 'apple', 'netflix', 'bank']
 
     def __init__(self, url):
-        self.url = url.lower().strip()
+        self.url = url.lower().strip().strip("'")
 
     def is_ip_address(self):
         domain = self.get_domain()
