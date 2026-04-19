@@ -38,22 +38,23 @@ class BloomFilter:
 if __name__ == "__main__":
     bf = BloomFilter()
 
-    benign_domains = ["google.com", "facebook.com", "amazon.com",
-                      "youtube.com", "twitter.com", "github.com"]
+    print("\n=== Loading real benign domains from Tranco ===")
+    import pandas as pd
 
-    print("Loading benign domains...")
-    bf.load_from_list(benign_domains)
+    tranco = pd.read_csv('data/tranco.csv', header=None, names=['rank', 'domain'])
+    top_domains = tranco['domain'].head(100_000).tolist()
 
-    print("\n=== Testing ===")
-    test_cases = [
-        ("google.com", "should be True"),
-        ("github.com", "should be True"),
-        ("evil-phishing.tk", "should be False"),
-        ("paypal.com.evil.ru", "should be False"),
-        ("amazon.com", "should be True"),
+    print(f"Loading {len(top_domains)} domains into Bloom filter...")
+    bf2 = BloomFilter(size=5_000_000, num_hashes=3)
+    bf2.load_from_list(top_domains)
+
+    print("\nTesting against real domains:")
+    real_tests = [
+        "google.com",
+        "youtube.com",
+        "evil-phishing-site.tk",
+        "paypal.com.hackers.ru",
+        "nobell.it",
     ]
-
-    for domain, expected in test_cases:
-        result = bf.might_contain(domain)
-        status = "PASS" if (result == ("True" in expected)) else "FAIL"
-        print(f"[{status}] {domain}: {result} ({expected})")
+    for domain in real_tests:
+        print(f"  {domain}: {bf2.might_contain(domain)}")
