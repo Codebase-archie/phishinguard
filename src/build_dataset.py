@@ -54,7 +54,7 @@ if __name__ == "__main__":
     df = build_dataset(
         input_path='data/raw_urls.csv',
         output_path='data/features.csv',
-        sample_size=50000
+        sample_size=100000
     )
     print("\nSample rows:")
     print(df.head(3))

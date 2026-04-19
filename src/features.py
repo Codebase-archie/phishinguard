@@ -23,6 +23,52 @@ def shannon_entropy(text):
     return entropy
     
 
+def min_edit_distance_to_brand(domain):
+    """
+    Returns the minimum edit distance ratio between
+    the domain and any known brand domain.
+    Ratio of 1.0 means identical, 0.0 means completely different.
+    """
+    brands = [
+        'paypal.com', 'google.com', 'facebook.com', 'amazon.com',
+        'apple.com', 'netflix.com', 'microsoft.com', 'instagram.com',
+        'twitter.com', 'linkedin.com', 'bankofamerica.com', 'chase.com'
+    ]
+
+    if not domain:
+        return 0.0
+
+    max_ratio = 0.0
+    domain_len = len(domain)
+
+    for brand in brands:
+        brand_len = len(brand)
+
+        # build edit distance matrix
+        dp = [[0] * (brand_len + 1) for _ in range(domain_len + 1)]
+
+        for i in range(domain_len + 1):
+            dp[i][0] = i
+        for j in range(brand_len + 1):
+            dp[0][j] = j
+
+        for i in range(1, domain_len + 1):
+            for j in range(1, brand_len + 1):
+                if domain[i-1] == brand[j-1]:
+                    dp[i][j] = dp[i-1][j-1]
+                else:
+                    dp[i][j] = 1 + min(
+                        dp[i-1][j],    # delete
+                        dp[i][j-1],    # insert
+                        dp[i-1][j-1]   # replace
+                    )
+
+        edit_dist = dp[domain_len][brand_len]
+        max_possible = max(domain_len, brand_len)
+        ratio = 1 - (edit_dist / max_possible)
+        max_ratio = max(max_ratio, ratio)
+
+    return round(max_ratio, 4)
 
 def extract_features(url):
     parser = URLParser(url)
@@ -70,6 +116,24 @@ def extract_features(url):
         # Ratio features
         'digit_ratio': sum(c.isdigit() for c in url) / max(len(url), 1),
         'letter_ratio': sum(c.isalpha() for c in url) / max(len(url), 1),
+        
+        # Additional strong signals
+        'query_length': len(query),
+        'num_params': query.count('&') + 1 if query else 0,
+        'has_hex_chars': 1 if '%' in url else 0,
+        'consonant_ratio': sum(
+            c in 'bcdfghjklmnpqrstvwxyz' for c in domain
+        ) / max(len(domain), 1),
+        'domain_has_digits': 1 if any(c.isdigit() for c in domain) else 0,
+        
+        'brand_similarity': min_edit_distance_to_brand(domain),
+        
+        'special_char_count': sum(
+            c in '!@#$%^&*()+=[]{}|;:,<>?' for c in url
+        ),
+        'repeated_digits': max(
+            [len(s) for s in __import__('re').findall(r'\d+', url)] or [0]
+        ),
     }
 
     return features
