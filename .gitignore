@@ -208,12 +208,18 @@ __marimo__/
 
 
 # Project specific
-data/*.csv
+data/phishing_site_urls.csv
+data/raw_urls.csv
 data/*.zip
 data/*.txt
-models/*.pkl
 venv/
 .env
 __pycache__/
 *.pyc
 .DS_Store
+
+# Allow these specific files
+!data/tranco.csv
+!data/features.csv
+!models/ensemble_v1.pkl
+!models/feature_names.pkl
