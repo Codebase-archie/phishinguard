@@ -5,11 +5,12 @@ import joblib
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
+
 from src.features import extract_features
 from src.bloom_filter import BloomFilter
 from src.url_parser import URLParser
-
 import pandas as pd
 
 app = FastAPI(
@@ -25,18 +26,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# load model and features at startup
 print("Loading model...")
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL = joblib.load(os.path.join(BASE_DIR, "models", "ensemble_v1.pkl"))
+FEATURE_NAMES = joblib.load(os.path.join(BASE_DIR, "models", "feature_names.pkl"))
 
-MODEL = joblib.load(os.path.join(BASE_DIR, "models/ensemble_v1.pkl"))
-FEATURE_NAMES = joblib.load(os.path.join(BASE_DIR, "models/feature_names.pkl"))
-
-# load bloom filter with benign domains
 print("Loading Bloom filter...")
 BLOOM = BloomFilter(size=5_000_000, num_hashes=3)
-tranco = pd.read_csv(os.path.join(BASE_DIR, "data/tranco.csv"), 
-                     header=None, names=["rank", "domain"])BLOOM.load_from_list(tranco["domain"].head(100_000).tolist())
+tranco = pd.read_csv(
+    os.path.join(BASE_DIR, "data", "tranco.csv"),
+    header=None,
+    names=["rank", "domain"]
+)
+BLOOM.load_from_list(tranco["domain"].head(100_000).tolist())
 
 print("PhishGuard API ready.")
 
@@ -62,7 +63,6 @@ def health():
 def predict(request: URLRequest):
     url = request.url.strip()
 
-    # fast path — check bloom filter first
     parser = URLParser(url)
     domain = parser.get_domain()
     bloom_hit = BLOOM.might_contain(domain)
@@ -76,15 +76,11 @@ def predict(request: URLRequest):
             top_features=[]
         )
 
-    # extract features and predict
     features = extract_features(url)
     feature_vector = pd.DataFrame([features])[FEATURE_NAMES]
     score = float(MODEL.predict_proba(feature_vector)[0][1])
-
     verdict = "phishing" if score >= 0.5 else "safe"
 
-    # get top 3 contributing features
-    # get top 3 most suspicious features
     suspicious_priority = [
         'is_suspicious_tld', 'has_brand_keyword', 'has_ip',
         'has_at_symbol', 'brand_similarity', 'url_entropy',
