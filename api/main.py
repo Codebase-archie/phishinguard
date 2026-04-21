@@ -27,14 +27,16 @@ app.add_middleware(
 
 # load model and features at startup
 print("Loading model...")
-MODEL = joblib.load("models/ensemble_v1.pkl")
-FEATURE_NAMES = joblib.load("models/feature_names.pkl")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+MODEL = joblib.load(os.path.join(BASE_DIR, "models/ensemble_v1.pkl"))
+FEATURE_NAMES = joblib.load(os.path.join(BASE_DIR, "models/feature_names.pkl"))
 
 # load bloom filter with benign domains
 print("Loading Bloom filter...")
 BLOOM = BloomFilter(size=5_000_000, num_hashes=3)
-tranco = pd.read_csv("data/tranco.csv", header=None, names=["rank", "domain"])
-BLOOM.load_from_list(tranco["domain"].head(100_000).tolist())
+tranco = pd.read_csv(os.path.join(BASE_DIR, "data/tranco.csv"), 
+                     header=None, names=["rank", "domain"])BLOOM.load_from_list(tranco["domain"].head(100_000).tolist())
 
 print("PhishGuard API ready.")
 
