@@ -4,7 +4,7 @@ from pydantic import BaseModel
 import joblib
 import sys
 import os
-import urllib.request
+import requests
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
@@ -29,13 +29,38 @@ app.add_middleware(
 
 
 def download_from_drive(file_id, destination):
-    """Download a file from Google Drive if it doesn't exist locally."""
+    """Download a file from Google Drive, handling large file virus scan warning."""
     if os.path.exists(destination):
         print(f"  Found cached: {destination}")
         return
     print(f"  Downloading to {destination}...")
-    url = f"https://drive.google.com/uc?export=download&id={file_id}"
-    urllib.request.urlretrieve(url, destination)
+    
+    session = requests.Session()
+    url = "https://drive.google.com/uc?export=download"
+    
+    # first request to get confirmation token
+    response = session.get(url, params={"id": file_id}, stream=True)
+    
+    # look for confirmation token in cookies or response
+    token = None
+    for key, value in response.cookies.items():
+        if key.startswith("download_warning"):
+            token = value
+            break
+    
+    # if token found, make second request with confirmation
+    if token:
+        response = session.get(
+            url,
+            params={"id": file_id, "confirm": token},
+            stream=True
+        )
+    
+    # save file in chunks
+    with open(destination, "wb") as f:
+        for chunk in response.iter_content(chunk_size=32768):
+            if chunk:
+                f.write(chunk)
     print(f"  Done.")
 
 
