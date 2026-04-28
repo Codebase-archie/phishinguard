@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import joblib
 import sys
 import os
+import urllib.request
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
@@ -26,17 +27,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+def download_from_drive(file_id, destination):
+    """Download a file from Google Drive if it doesn't exist locally."""
+    if os.path.exists(destination):
+        print(f"  Found cached: {destination}")
+        return
+    print(f"  Downloading to {destination}...")
+    url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    urllib.request.urlretrieve(url, destination)
+    print(f"  Done.")
+
+
+# file IDs from Google Drive
+ENSEMBLE_ID = "1YJj8TmnTaPY7_ghPhZaU3QongEpXuGJu"
+FEATURES_ID = "14V_DUdc1pXgXnaE_JNcLlOJiimp5tlEN"
+TRANCO_ID = "1sEL-Kzavd6_XSclzAk26hyEkzbbuCcEg"
+
+models_dir = os.path.join(BASE_DIR, "models")
+data_dir = os.path.join(BASE_DIR, "data")
+os.makedirs(models_dir, exist_ok=True)
+os.makedirs(data_dir, exist_ok=True)
+
+model_path = os.path.join(models_dir, "ensemble_v1.pkl")
+features_path = os.path.join(models_dir, "feature_names.pkl")
+tranco_path = os.path.join(data_dir, "tranco.csv")
+
+print("Checking model files...")
+download_from_drive(ENSEMBLE_ID, model_path)
+download_from_drive(FEATURES_ID, features_path)
+download_from_drive(TRANCO_ID, tranco_path)
+
 print("Loading model...")
-MODEL = joblib.load(os.path.join(BASE_DIR, "models", "ensemble_v1.pkl"))
-FEATURE_NAMES = joblib.load(os.path.join(BASE_DIR, "models", "feature_names.pkl"))
+MODEL = joblib.load(model_path)
+FEATURE_NAMES = joblib.load(features_path)
 
 print("Loading Bloom filter...")
 BLOOM = BloomFilter(size=5_000_000, num_hashes=3)
-tranco = pd.read_csv(
-    os.path.join(BASE_DIR, "data", "tranco.csv"),
-    header=None,
-    names=["rank", "domain"]
-)
+
+tranco = pd.read_csv(tranco_path, header=None, names=["rank", "domain"])
 BLOOM.load_from_list(tranco["domain"].head(100_000).tolist())
 
 print("PhishGuard API ready.")
