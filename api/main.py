@@ -65,7 +65,10 @@ def predict(request: URLRequest):
 
     parser = URLParser(url)
     domain = parser.get_domain()
-    bloom_hit = BLOOM.might_contain(domain)
+
+    # strip www. prefix for bloom filter lookup
+    bloom_domain = domain.replace("www.", "", 1)
+    bloom_hit = BLOOM.might_contain(domain) or BLOOM.might_contain(bloom_domain)
 
     if bloom_hit:
         return PredictionResponse(
