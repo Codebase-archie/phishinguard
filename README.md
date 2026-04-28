@@ -15,7 +15,7 @@ custom data structures, a deployed REST API, and a Chrome extension.
 
 ## 🖥️ Demo
 
-![PhishGuard detecting a phishing URL in real time](docs/demo.png)
+![PhishGuard detecting a phishing URL in real time]("https://drive.google.com/file/d/1IfPdHgjlM4tK-fPhrBZ2Va3F68NWtK-P/view?usp=sharing")
 
 *Chrome extension detecting a phishing URL with 99% confidence,
 showing exactly why it was flagged.*
