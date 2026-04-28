@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+    }
+
+    .header {
+      padding: 16px 20px;
+      background: #1a1d2e;
+      border-bottom: 1px solid #2d3148;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo {
+      font-size: 20px;
+    }
+
+    .header h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .header p {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .content {
+      padding: 16px 20px;
+    }
+
+    .url-box {
+      background: #1a1d2e;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 11px;
+      color: #94a3b8;
+      margin-bottom: 12px;
+      word-break: break-all;
+      line-height: 1.4;
+      min-height: 36px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    button:hover { background: #2563eb; }
+    button:disabled { background: #334155; cursor: not-allowed; }
+
+    .result {
+      margin-top: 14px;
+      border-radius: 8px;
+      padding: 14px;
+      display: none;
+    }
+
+    .result.safe {
+      background: #052e16;
+      border: 1px solid #166534;
+    }
+
+    .result.phishing {
+      background: #2d0a0a;
+      border: 1px solid #991b1b;
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .result-icon { font-size: 20px; }
+
+    .result-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .safe .result-title { color: #4ade80; }
+    .phishing .result-title { color: #f87171; }
+
+    .score-bar-bg {
+      background: #1e293b;
+      border-radius: 4px;
+      height: 6px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .score-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    .safe .score-bar { background: #4ade80; }
+    .phishing .score-bar { background: #f87171; }
+
+    .score-text {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-bottom: 10px;
+    }
+
+    .features { border-top: 1px solid #2d3148; padding-top: 10px; }
+
+    .feature-label {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .feature-pill {
+      display: inline-block;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 11px;
+      color: #94a3b8;
+      margin: 2px 2px 2px 0;
+    }
+
+    .cached-badge {
+      font-size: 10px;
+      color: #64748b;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .error {
+      margin-top: 14px;
+      background: #1c1008;
+      border: 1px solid #78350f;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      color: #fbbf24;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="logo">🛡️</span>
+    <div>
+      <h1>PhishGuard</h1>
+      <p>ML-powered phishing detector</p>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="url-box" id="urlDisplay">Loading current tab...</div>
+    <button id="analyzeBtn">Analyze URL</button>
+
+    <div class="result" id="result">
+      <div class="result-header">
+        <span class="result-icon" id="resultIcon"></span>
+        <span class="result-title" id="resultTitle"></span>
+      </div>
+      <div class="score-bar-bg">
+        <div class="score-bar" id="scoreBar" style="width:0%"></div>
+      </div>
+      <div class="score-text" id="scoreText"></div>
+      <div class="features" id="featuresDiv" style="display:none">
+        <div class="feature-label">Why flagged</div>
+        <div id="featurePills"></div>
+      </div>
+      <div class="cached-badge" id="cachedBadge"></div>
+    </div>
+
+    <div class="error" id="errorDiv"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
