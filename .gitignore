@@ -219,7 +219,7 @@ __pycache__/
 .DS_Store
 
 # Allow these specific files
-!data/tranco.csv
-!data/features.csv
-!models/ensemble_v1.pkl
-!models/feature_names.pkl
+#!data/tranco.csv
+#!data/features.csv
+#!models/ensemble_v1.pkl
+#!models/feature_names.pkl
