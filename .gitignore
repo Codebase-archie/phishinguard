@@ -223,3 +223,14 @@ __pycache__/
 #!data/features.csv
 #!models/ensemble_v1.pkl
 #!models/feature_names.pkl
+
+# allow small model files
+data/phishing_site_urls.csv
+data/raw_urls.csv
+data/*.zip
+data/tranco.csv
+venv/
+.env
+__pycache__/
+*.pyc
+.DS_Store

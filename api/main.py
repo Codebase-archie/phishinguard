@@ -4,7 +4,7 @@ from pydantic import BaseModel
 import joblib
 import sys
 import os
-import requests
+import pandas as pd
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
@@ -12,7 +12,6 @@ sys.path.append(BASE_DIR)
 from src.features import extract_features
 from src.bloom_filter import BloomFilter
 from src.url_parser import URLParser
-import pandas as pd
 
 app = FastAPI(
     title="PhishGuard API",
@@ -27,70 +26,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-def download_from_drive(file_id, destination):
-    """Download a file from Google Drive, handling large file virus scan warning."""
-    if os.path.exists(destination):
-        print(f"  Found cached: {destination}")
-        return
-    print(f"  Downloading to {destination}...")
-    
-    session = requests.Session()
-    url = "https://drive.google.com/uc?export=download"
-    
-    # first request to get confirmation token
-    response = session.get(url, params={"id": file_id}, stream=True)
-    
-    # look for confirmation token in cookies or response
-    token = None
-    for key, value in response.cookies.items():
-        if key.startswith("download_warning"):
-            token = value
-            break
-    
-    # if token found, make second request with confirmation
-    if token:
-        response = session.get(
-            url,
-            params={"id": file_id, "confirm": token},
-            stream=True
-        )
-    
-    # save file in chunks
-    with open(destination, "wb") as f:
-        for chunk in response.iter_content(chunk_size=32768):
-            if chunk:
-                f.write(chunk)
-    print(f"  Done.")
-
-
-# file IDs from Google Drive
-ENSEMBLE_ID = "1YJj8TmnTaPY7_ghPhZaU3QongEpXuGJu"
-FEATURES_ID = "14V_DUdc1pXgXnaE_JNcLlOJiimp5tlEN"
-TRANCO_ID = "1sEL-Kzavd6_XSclzAk26hyEkzbbuCcEg"
-
-models_dir = os.path.join(BASE_DIR, "models")
-data_dir = os.path.join(BASE_DIR, "data")
-os.makedirs(models_dir, exist_ok=True)
-os.makedirs(data_dir, exist_ok=True)
-
-model_path = os.path.join(models_dir, "ensemble_v1.pkl")
-features_path = os.path.join(models_dir, "feature_names.pkl")
-tranco_path = os.path.join(data_dir, "tranco.csv")
-
-print("Checking model files...")
-download_from_drive(ENSEMBLE_ID, model_path)
-download_from_drive(FEATURES_ID, features_path)
-download_from_drive(TRANCO_ID, tranco_path)
-
 print("Loading model...")
-MODEL = joblib.load(model_path)
-FEATURE_NAMES = joblib.load(features_path)
+MODEL = joblib.load(os.path.join(BASE_DIR, "models", "model_light.pkl"))
+FEATURE_NAMES = joblib.load(os.path.join(BASE_DIR, "models", "feature_names.pkl"))
 
 print("Loading Bloom filter...")
 BLOOM = BloomFilter(size=5_000_000, num_hashes=3)
-
-tranco = pd.read_csv(tranco_path, header=None, names=["rank", "domain"])
+tranco = pd.read_csv(
+    os.path.join(BASE_DIR, "data", "tranco.csv"),
+    header=None,
+    names=["rank", "domain"]
+)
 BLOOM.load_from_list(tranco["domain"].head(100_000).tolist())
 
 print("PhishGuard API ready.")
@@ -110,7 +56,7 @@ class PredictionResponse(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "model": "ensemble_v1"}
+    return {"status": "ok", "model": "model_light"}
 
 
 @app.post("/predict", response_model=PredictionResponse)
